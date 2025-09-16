@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>表 {{ table_name }}</title>
+</head>
+<body>
+    <h1>表：{{ table_name }}</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                {% for col in columns %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    {% for col in row %}
+                        <td>{{ col }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><a href="{% url 'list_tables' %}">返回表列表</a></p>
+</body>
+</html>
