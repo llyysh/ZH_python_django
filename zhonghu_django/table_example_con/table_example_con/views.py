@@ -66,6 +66,86 @@ def table_show(request):
     to_render(html_render, data, table)
     return render(request, "index.html", html_render)
 
+# def show_table(request, table_name):
+#     """
+#     根据 table_name 显示表数据（被 index.html 重用）。
+#     支持：
+#       - GET 参数 cols（多值）：cols=col1&cols=col2...
+#       - GET 参数 start_date, end_date（仅在表含时间列时生效）
+#     """
+#     # 检查表是否存在
+#     table_names = connection.introspection.table_names()
+#     if table_name not in table_names:
+#         raise Http404("表不存在")
+
+#     cursor = connection.cursor()
+
+#     # 1) 读取表的所有列名（用 LIMIT 1 快速获取列信息）
+#     cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 1")
+#     all_columns = [col[0] for col in cursor.description]
+
+#     # 2) 尝试自动找一个“时间列”（heuristic）
+#     time_candidates = [c for c in all_columns if any(k in c.lower() for k in ('time', 'date', 'created', 'timestamp'))]
+#     time_column = time_candidates[0] if time_candidates else None
+
+#     # 3) 前端传回的列选择（checkbox，name="cols"），没有选则默认全部
+#     selected_cols = request.GET.getlist('cols')
+#     if not selected_cols:
+#         selected_cols = all_columns.copy()
+
+#     # 4) 时间筛选参数（字符串，格式由前端 <input type="date"> 产生，形如 YYYY-MM-DD）
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+
+#     # 5) 构建 SQL（只选择用户想要的列）
+#     #    只有在检测到 time_column 时才拼接时间过滤
+#     quoted_cols = ", ".join(f"`{c}`" for c in selected_cols)
+#     sql = f"SELECT {quoted_cols} FROM `{table_name}` WHERE 1=1"
+#     params = []
+
+#     if time_column:
+#         if start_date:
+#             sql += f" AND `{time_column}` >= %s"
+#             params.append(start_date)
+#         if end_date:
+#             sql += f" AND `{time_column}` <= %s"
+#             params.append(end_date)
+
+#     # （可选）你可以按时间排序，便于分页查看：若检测到 time_column，按它倒序
+#     # if time_column:
+#     #     sql += f" ORDER BY `{time_column}` DESC"
+
+#     # 注意：这里没有 LIMIT —— django_tables2 会对传入的数据做分页（但会先把结果取回）
+#     cursor.execute(sql, params)
+#     rows = cursor.fetchall()  # rows 是元组列表
+
+#     # 6) 将结果转换为 dict 列表，方便 django_tables2 用 key 渲染
+#     data = [dict(zip(selected_cols, r)) for r in rows]
+
+#     # 7) 动态创建一个 django_tables2 Table 类（列名基于 selected_cols）
+#     table_columns = {c: tables.Column(verbose_name=c) for c in selected_cols}
+
+#     class Meta:
+#         attrs = {"class": "info-table"}
+
+#     # use type(...) to build the class dynamically
+#     DynamicTable = type("DynamicTable", (tables.Table,), {**table_columns, "Meta": Meta})
+
+#     table = DynamicTable(data)
+#     RequestConfig(request, paginate={"per_page": 50}).configure(table)
+
+#     # 8) 传回模板需要的变量（index.html 中 Center 会使用这些变量）
+#     context = {
+#         "table": table,
+#         "table_name": table_name,
+#         "all_columns": all_columns,
+#         "selected_cols": selected_cols,
+#         "start_date": start_date,
+#         "end_date": end_date,
+#         "time_column": time_column,
+#     }
+#     return render(request, "index.html", context)
+
 
 # rendering "Search by Title"
 def news_search(request):
