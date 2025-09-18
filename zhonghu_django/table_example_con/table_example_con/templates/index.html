@@ -1,10 +1,10 @@
-{% load render_table from django_tables2 %}
+<!-- {% load render_table from django_tables2 %}
 {% load querystring from django_tables2 %}
 {% load bootstrap4 %}
 <!doctype html>
 <html>
     <head>
-        <a href="board/"><title>Django table example</title></a>
+        <a href="board/"><title>中互对账查询</title></a>
         <link rel="stylesheet" href="/static/css/pos.css"/>
         <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
         <link rel="stylesheet" href="/static/css/table_1.css"/>
@@ -17,114 +17,6 @@
     <div id="Top" style="background:#38c">
         <a href="/tables/" id="acrn_title">&nbsp;对账查询</a>
     </div>
-    <!-- <div id="Center">
-        {% if table_name %} 
-            
-            <div id="Center_Searcher">
-                <form action="{% url 'show_table' table_name=table_name %}" method="get">
-                    <table class="center_table">
-                        <tr><td colspan="5"><h3>按时间和列筛选: {{ table_name }}</h3></td></tr>
-                        <tr>
-                            <td>起始时间:</td>
-                            <td align="center">
-                                <input type="date" name="start_date" value="{{ start_date }}">
-                            </td>
-                            <td>结束时间:</td>
-                            <td align="center">
-                                <input type="date" name="end_date" value="{{ end_date }}">
-                            </td>
-                            <td align="center">
-                                <input type="submit" value="筛选">
-                            </td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-
-            <div id="Center_Filter">
-                
-                <form action="{% url 'show_table' table_name=table_name %}" method="get">
-                    
-                    <input type="hidden" name="start_date" value="{{ start_date }}">
-                    <input type="hidden" name="end_date" value="{{ end_date }}">
-
-                    <table class="center_table">
-                        <tr><td colspan="5"><h3>选择显示列</h3></td></tr>
-                        <tr>
-                            <td colspan="5">
-                                <div style="max-height:200px; overflow:auto; border:1px solid #ddd; padding:6px;">
-                                    {% for col in all_columns %}
-                                        <label style="display:inline-block; width:220px; margin:4px;">
-                                            <input type="checkbox" name="cols" value="{{ col }}"
-                                                {% if col in selected_cols %}checked{% endif %}>
-                                            {{ col }}
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="5" style="padding-top:8px;">
-                                <button type="submit">应用所选列</button>
-                                &nbsp;&nbsp;
-                                
-                                <button type="button" id="select_all_cols">全选</button>
-                                <button type="button" id="deselect_all_cols">全不选</button>
-                            </td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-
-            <script type="text/javascript">
-                // 简单的 JS：全选 / 取消全选
-                document.addEventListener('DOMContentLoaded', function() {
-                    var selectAllBtn = document.getElementById('select_all_cols');
-                    var deselectAllBtn = document.getElementById('deselect_all_cols');
-                    selectAllBtn && selectAllBtn.addEventListener('click', function(){
-                        document.querySelectorAll('input[name="cols"]').forEach(function(cb){ cb.checked = true; });
-                    });
-                    deselectAllBtn && deselectAllBtn.addEventListener('click', function(){
-                        document.querySelectorAll('input[name="cols"]').forEach(function(cb){ cb.checked = false; });
-                    });
-                });
-            </script>
-
-        {% else %}
-            
-            <div id="Center_Searcher">
-                <form action="/news_search" method="get">
-                    <table class="center_table">
-                        <tr><td colspan="5"><h3>关键词搜索</h3></td></tr>
-                        <tr>
-                            <td>关键词:</td>
-                            <td align="center">&nbsp;&nbsp;<input name="keywd_input" value="{{ keywd_input }}"></td>
-                            <td align="center">&nbsp;&nbsp;<input type="submit" value="搜索"></td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-
-            <div id="Center_Filter">
-                <form action="/news_filter" method="get">
-                    <table class="center_table">
-                        <tr><td colspan="5"><h3>筛选</h3></td></tr>
-                        <tr>
-                            <td>Category:</td>
-                            <td>&nbsp;&nbsp;<select name="filter_category">
-                                {% for i in category_list %}
-                                <option value="{{i}}" {% if i == filter_category %} selected{% endif %}>{{i}}</option>
-                                {% endfor %}
-                            </select></td>
-                            <td><input type="submit" value="Filter"></td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-        {% endif %}
-    </div> -->
-
-
 
     <div id="Center">
         <div id="Center_Searcher">
@@ -165,4 +57,112 @@
     </div>
     </div>
     </body>
+</html> -->
+
+
+{% load render_table from django_tables2 %}
+{% load querystring from django_tables2 %}
+{% load bootstrap4 %}
+<!doctype html>
+<html>
+<head>
+    <a href=""><title>中互对账查询</title></a>
+    <link rel="stylesheet" href="/static/css/pos.css"/>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/static/css/table_1.css"/>
+    <style>
+       body {background-color: whitesmoke;}
+       .custom-box {
+           border: 1px solid #ddd;
+           border-radius: 4px;
+           padding: 15px;
+           margin-bottom: 20px;
+           background-color: white;
+           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+       }
+       .column-checkboxes {
+           max-height: 200px;
+           overflow-y: auto;
+           padding: 10px;
+           margin: 10px 0;
+       }
+       .checkbox-item {
+           display: inline-block;
+           width: 200px;
+           margin: 5px;
+       }
+    </style>
+    <script type="text/javascript" src="/static/js/jquery-1.11.0.js"></script>
+</head>
+<body>
+<div id="Top" style="background:#38c">
+    <a href="/tables/" id="acrn_title">&nbsp;对账查询</a>
+</div>
+
+<div id="Center">
+    <!-- 列筛选复选框区域 -->
+    {% if table_name %}
+    <div id="Column_Filter" class="custom-box">
+        <form action="{% url 'show_table' table_name=table_name %}" method="get">
+            <h3>选择显示列</h3>
+            <div class="column-checkboxes">
+                {% for col in all_columns %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="cols" value="{{ col }}"
+                            {% if col in selected_cols %}checked{% endif %}>
+                        {{ col }}
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="submit">应用筛选</button>
+            <button type="button" id="select-all">全选</button>
+            <button type="button" id="deselect-all">全不选</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 关键词搜索区域 -->
+    <div id="Center_Searcher" class="custom-box">
+        <form action="/news_search" method="get">
+            <h3>关键词搜索</h3>
+            <table class="center_table">
+                <tr>
+                    <td>关键词:</td>
+                    <td align="center">&nbsp;&nbsp;<input name="keywd_input" value="{{ keywd_input }}"></td>
+                    <td align="center">&nbsp;&nbsp;<input type="submit" value="搜索"></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+<div id="Table" class="custom-box">
+    <h3>&nbsp;{{ table_name|default:"Device table" }}</h3>
+    <form action="/download_excel" method="get">
+        {% for col in selected_cols %}
+            <input type="hidden" name="cols" value="{{ col }}">
+        {% endfor %}
+        {% if table_name %}
+            <input type="hidden" name="table_name" value="{{ table_name }}">
+        {% endif %}
+        &nbsp;&nbsp;<button type="submit">Download to excel</button>
+    </form><br>
+    {% render_table table %}
+</div>
+
+<script>
+// 全选/全不选功能
+document.getElementById('select-all').addEventListener('click', function() {
+    document.querySelectorAll('input[name="cols"]').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+});
+
+document.getElementById('deselect-all').addEventListener('click', function() {
+    document.querySelectorAll('input[name="cols"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+});
+</script>
+</body>
 </html>

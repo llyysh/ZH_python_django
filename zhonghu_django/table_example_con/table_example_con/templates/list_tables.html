@@ -1,96 +1,97 @@
 {% load render_table from django_tables2 %}
 {% load querystring from django_tables2 %}
-{% load bootstrap4 %}
 <!doctype html>
 <html>
 <head>
-    <a href="board/"><title>Django table example</title></a>
+    <a href=""><title>中互对账查询</title></a>
     <link rel="stylesheet" href="/static/css/pos.css"/>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="/static/css/table_1.css"/>
     <style>
-       body {background-color: whitesmoke;}
+        /* body {background-color: whitesmoke;}
+        .custom-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .table-container {
+            margin: 20px;
+        } */
+        body {
+            background-color: whitesmoke;
+            margin: 0;
+            padding: 0;
+        }
+        .page-container {
+            max-width: 1200px; /* 限制页面最大宽度 */
+            margin: 0 auto;    /* 水平居中 */
+            padding: 20px;
+        }
+        .custom-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .search-form table {
+            width: auto; /* 让搜索表单宽度自适应内容 */
+        }
+        .table-container table {
+            width: 100%; /* 表格宽度适应容器 */
+        }
     </style>
-    <script type="text/javascript" src="/static/js/jquery-1.11.0.js"></script>
 </head>
 <body>
 <div id="Top" style="background:#38c">
     <a href="/tables/" id="acrn_title">&nbsp;对账查询</a>
 </div>
 
-<div id="Center">
-    <!-- 搜索（针对表名） -->
-    <div id="Center_Searcher">
+<div id="Center" class="table-container">
+    <!-- 表搜索区域 - 使用统一样式 -->
+    <div id="Table_Searcher" class="custom-box">
         <form action="{% url 'list_tables' %}" method="get">
-        <table class="center_table">
-            <tr><td colspan="5"><h3>关键词搜索</h3></td></tr>
-            <tr>
-                <td>关键词:</td>
-                <td align="center">&nbsp;&nbsp;<input name="keywd_input" value="{{ keywd_input }}"></td>
-                <td align="center">&nbsp;&nbsp;<input type="submit" value="搜索"></td>
-            </tr>
-        </table>
+            <h3>表名搜索</h3>
+            <table class="center_table">
+                <tr>
+                    <td>表名关键词:</td>
+                    <td align="center">&nbsp;&nbsp;<input name="table_keyword" value="{{ table_keyword|default:'' }}"></td>
+                    <td align="center">&nbsp;&nbsp;<input type="submit" value="搜索"></td>
+                </tr>
+            </table>
         </form>
     </div>
 
-    <!-- 筛选（可由 view 传入 category_list） -->
-    <!-- <div id="Center_Filter">
-        <form action="{% url 'list_tables' %}" method="get">
-        <table class="center_table">
-            <tr><td colspan="5"><h3>筛选</h3></td></tr>
-            <tr>
-                <td>Category:</td>
-                <td>&nbsp;&nbsp;<select name="filter_category">
-                    {% for i in category_list %}
-                      <option value="{{ i }}" {% if i == filter_category %} selected{% endif %}>{{ i }}</option>
-                    {% endfor %}
-                </select></td>
-                <td><input type="submit" value="Filter"></td>
-            </tr>
-        </table>
-        </form>
-    </div> -->
-</div>
-
-<div id="Table">
-    <h3>&nbsp;Database tables</h3>
-    <br>
-    <!-- 这里直接罗列表名，每个表名链接到 show_table -->
-    <div class="container">
-        {% if tables %}
-            <ul class="list-group">
+    <!-- 表列表展示区域 -->
+    <div id="Tables_List" class="custom-box">
+        <h3>数据库表列表</h3>
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th>表名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
                 {% for table in tables %}
-                    <li class="list-group-item">
-                        <a href="{% url 'show_table' table_name=table %}">{{ table }}</a>
-                    </li>
+                <tr>
+                    <td>{{ table }}</td>
+                    <td>
+                        <a href="{% url 'show_table' table_name=table %}" class="btn btn-sm btn-primary">查看详情</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" align="center">没有找到匹配的表</td>
+                </tr>
                 {% endfor %}
-            </ul>
-        {% else %}
-            <p>没有找到表。</p>
-        {% endif %}
+            </tbody>
+        </table>
     </div>
 </div>
-
 </body>
 </html>
-
-
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <title>数据库表列表</title>
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
-</head>
-<body>
-    <div class="container">
-        <h1>数据库表列表</h1>
-        <ul class="list-group">
-            {% for table in tables %}
-                <li class="list-group-item">
-                    <a href="{% url 'show_table' table %}">{{ table }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
-</body>
-</html> -->

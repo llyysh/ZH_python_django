@@ -66,88 +66,8 @@ def table_show(request):
     to_render(html_render, data, table)
     return render(request, "index.html", html_render)
 
-# def show_table(request, table_name):
-#     """
-#     根据 table_name 显示表数据（被 index.html 重用）。
-#     支持：
-#       - GET 参数 cols（多值）：cols=col1&cols=col2...
-#       - GET 参数 start_date, end_date（仅在表含时间列时生效）
-#     """
-#     # 检查表是否存在
-#     table_names = connection.introspection.table_names()
-#     if table_name not in table_names:
-#         raise Http404("表不存在")
-
-#     cursor = connection.cursor()
-
-#     # 1) 读取表的所有列名（用 LIMIT 1 快速获取列信息）
-#     cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 1")
-#     all_columns = [col[0] for col in cursor.description]
-
-#     # 2) 尝试自动找一个“时间列”（heuristic）
-#     time_candidates = [c for c in all_columns if any(k in c.lower() for k in ('time', 'date', 'created', 'timestamp'))]
-#     time_column = time_candidates[0] if time_candidates else None
-
-#     # 3) 前端传回的列选择（checkbox，name="cols"），没有选则默认全部
-#     selected_cols = request.GET.getlist('cols')
-#     if not selected_cols:
-#         selected_cols = all_columns.copy()
-
-#     # 4) 时间筛选参数（字符串，格式由前端 <input type="date"> 产生，形如 YYYY-MM-DD）
-#     start_date = request.GET.get('start_date')
-#     end_date = request.GET.get('end_date')
-
-#     # 5) 构建 SQL（只选择用户想要的列）
-#     #    只有在检测到 time_column 时才拼接时间过滤
-#     quoted_cols = ", ".join(f"`{c}`" for c in selected_cols)
-#     sql = f"SELECT {quoted_cols} FROM `{table_name}` WHERE 1=1"
-#     params = []
-
-#     if time_column:
-#         if start_date:
-#             sql += f" AND `{time_column}` >= %s"
-#             params.append(start_date)
-#         if end_date:
-#             sql += f" AND `{time_column}` <= %s"
-#             params.append(end_date)
-
-#     # （可选）你可以按时间排序，便于分页查看：若检测到 time_column，按它倒序
-#     # if time_column:
-#     #     sql += f" ORDER BY `{time_column}` DESC"
-
-#     # 注意：这里没有 LIMIT —— django_tables2 会对传入的数据做分页（但会先把结果取回）
-#     cursor.execute(sql, params)
-#     rows = cursor.fetchall()  # rows 是元组列表
-
-#     # 6) 将结果转换为 dict 列表，方便 django_tables2 用 key 渲染
-#     data = [dict(zip(selected_cols, r)) for r in rows]
-
-#     # 7) 动态创建一个 django_tables2 Table 类（列名基于 selected_cols）
-#     table_columns = {c: tables.Column(verbose_name=c) for c in selected_cols}
-
-#     class Meta:
-#         attrs = {"class": "info-table"}
-
-#     # use type(...) to build the class dynamically
-#     DynamicTable = type("DynamicTable", (tables.Table,), {**table_columns, "Meta": Meta})
-
-#     table = DynamicTable(data)
-#     RequestConfig(request, paginate={"per_page": 50}).configure(table)
-
-#     # 8) 传回模板需要的变量（index.html 中 Center 会使用这些变量）
-#     context = {
-#         "table": table,
-#         "table_name": table_name,
-#         "all_columns": all_columns,
-#         "selected_cols": selected_cols,
-#         "start_date": start_date,
-#         "end_date": end_date,
-#         "time_column": time_column,
-#     }
-#     return render(request, "index.html", context)
 
 
-# rendering "Search by Title"
 def news_search(request):
     data = news.objects.all()
     html_render = {}
@@ -180,19 +100,54 @@ def news_filter(request):
 
     return render(request, "index.html", html_render)
 
+# def download_excel(request):
+#     # 
+#     data = news.objects.values("time", "title", "category")
+
+#     response = HttpResponse(content_type="text/csv")
+#     response["Content-Disposition"] = 'attachment; filename="table_download.csv"'
+
+#     writer = csv.writer(response)
+
+#     writer.writerow(["time", "title", "category"])
+   
+#     for row in data:
+#         writer.writerow([row["time"], row["title"], row["category"]])
+
+#     return response
+
 def download_excel(request):
-    # 
-    data = news.objects.values("time", "title", "category")
+    """支持按选中的列下载数据"""
+    table_name = request.GET.get('table_name', '')
+    selected_cols = request.GET.getlist('cols')
+    
+    # 验证表是否存在
+    table_names = connection.introspection.table_names()
+    if not table_name or table_name not in table_names:
+        raise Http404("表不存在")
+
+    with connection.cursor() as cursor:
+        # 获取表的所有列
+        cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 1")
+        all_columns = [col[0] for col in cursor.description]
+        
+        # 如果没有选择列，默认下载所有列
+        if not selected_cols:
+            selected_cols = all_columns
+        
+        # 构建查询
+        quoted_cols = ", ".join(f"`{c}`" for c in selected_cols)
+        cursor.execute(f"SELECT {quoted_cols} FROM `{table_name}`")
+        rows = cursor.fetchall()
 
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="table_download.csv"'
+    response["Content-Disposition"] = f'attachment; filename="{table_name}_download.csv"'
 
     writer = csv.writer(response)
-
-    writer.writerow(["time", "title", "category"])
-   
-    for row in data:
-        writer.writerow([row["time"], row["title"], row["category"]])
+    writer.writerow(selected_cols)  # 写入列名
+    
+    for row in rows:
+        writer.writerow(row)
 
     return response
 
@@ -224,16 +179,60 @@ def list_tables(request):
     })
 
 
+# def show_table(request, table_name):
+#     """展示指定表的内容，复用 index.html """
+#     table_names = connection.introspection.table_names()
+#     if table_name not in table_names:
+#         raise Http404("表不存在")
+
+#     with connection.cursor() as cursor:
+#         cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 200")
+#         rows = cursor.fetchall()
+#         columns = [col[0] for col in cursor.description]
+
+#     # 动态生成 Table 类
+#     class GenericTable(tables.Table):
+#         class Meta:
+#             attrs = {"class": "info-table"}
+
+#     for col in columns:
+#         GenericTable.base_columns[col] = tables.Column(verbose_name=col)
+
+#     # 组装成字典数据（django_tables2 需要）
+#     data = [dict(zip(columns, row)) for row in rows]
+
+#     table = GenericTable(data)
+#     RequestConfig(request, paginate={'per_page': 50}).configure(table)
+
+#     html_render = {
+#         "table": table,
+#         "category_list": [],  # 避免模板报错
+#         "filter_category": None,
+#         "keywd_input": None,
+#     }
+#     return render(request, "index.html", html_render)
+
 def show_table(request, table_name):
-    """展示指定表的内容，复用 index.html """
+    """展示指定表的内容，支持列筛选功能"""
     table_names = connection.introspection.table_names()
     if table_name not in table_names:
         raise Http404("表不存在")
 
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 200")
+        # 获取所有列名
+        cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 1")
+        all_columns = [col[0] for col in cursor.description]
+        
+        # 获取前端勾选的列（默认显示所有列）
+        selected_cols = request.GET.getlist('cols')
+        if not selected_cols:
+            selected_cols = all_columns.copy()
+        
+        # 只查询勾选的列
+        quoted_cols = ", ".join(f"`{c}`" for c in selected_cols)
+        cursor.execute(f"SELECT {quoted_cols} FROM `{table_name}` LIMIT 200")
         rows = cursor.fetchall()
-        columns = [col[0] for col in cursor.description]
+        columns = selected_cols  # 使用筛选后的列
 
     # 动态生成 Table 类
     class GenericTable(tables.Table):
@@ -243,7 +242,7 @@ def show_table(request, table_name):
     for col in columns:
         GenericTable.base_columns[col] = tables.Column(verbose_name=col)
 
-    # 组装成字典数据（django_tables2 需要）
+    # 组装成字典数据
     data = [dict(zip(columns, row)) for row in rows]
 
     table = GenericTable(data)
@@ -251,11 +250,13 @@ def show_table(request, table_name):
 
     html_render = {
         "table": table,
-        "category_list": [],  # 避免模板报错
-        "filter_category": None,
-        "keywd_input": None,
+        "table_name": table_name,  # 传递表名用于表单提交
+        "all_columns": all_columns,  # 所有列名
+        "selected_cols": selected_cols,  # 已选列名
+        "keywd_input": None,  # 保留搜索关键词
     }
     return render(request, "index.html", html_render)
+
 #####################################################################################################
 # from django.shortcuts import render
 # from django.db import models
